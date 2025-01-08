@@ -17,11 +17,11 @@ uploads/*
 !uploads/.gitkeep
 tmp/*
 !tmp/.gitkeep
-static/
 
-# Frontend (since it's deployed separately)
-frontend/
-node_modules/
+# Keep frontend, ignore node_modules
+frontend/node_modules
+frontend/.next
+frontend/.cache
 
 # Development files
 *.ipynb
