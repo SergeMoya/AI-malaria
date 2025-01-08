@@ -7,24 +7,27 @@ __pycache__
 venv
 env
 .env
+*.log
 
 # Large directories not needed in production
-HQ images
-data
-output
+HQ images/
+data/
+output/
 uploads/*
 !uploads/.gitkeep
+tmp/*
+!tmp/.gitkeep
+static/
 
 # Frontend (since it's deployed separately)
-frontend
+frontend/
+node_modules/
 
 # Development files
-*.log
-.DS_Store
-.vscode
 *.ipynb
-
-# Keep only necessary static files
-static/*
-!static/prediction_accuracy_plot_fr.png
-!static/prevention_heatmap.png
+*.test.py
+*.spec
+README.md
+*.md
+.gitignore
+.DS_Store
