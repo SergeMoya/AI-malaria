@@ -9,6 +9,10 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import { CircularProgress } from '@mui/material';
 
+// API configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_TIMEOUT = 30000; // 30 seconds
+
 function App() {
   const [file, setFile] = useState(null);
   const [results, setResults] = useState(null);
@@ -83,8 +87,17 @@ function App() {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: API_TIMEOUT
       });
-      setResults(response.data);
+
+      if (response.data.success) {
+        setResults({
+          heatmap: `${API_URL}/image/${response.data.heatmap}`,
+          prediction_plot: `${API_URL}/image/${response.data.prediction_plot}`
+        });
+      } else {
+        throw new Error(response.data.error || 'Erreur lors de l\'analyse');
+      }
     } catch (err) {
       setError('Erreur lors de l\'analyse: ' + err.message);
     } finally {
