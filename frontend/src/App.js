@@ -9,6 +9,10 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import { CircularProgress } from '@mui/material';
 
+// API configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_TIMEOUT = 30000; // 30 seconds
+
 function App() {
   const [file, setFile] = useState(null);
   const [results, setResults] = useState(null);
@@ -59,12 +63,23 @@ function App() {
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+      handleFileSelection(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
+    if (event.target.files && event.target.files[0]) {
+      handleFileSelection(event.target.files[0]);
+    }
+  };
+
+  const handleFileSelection = (selectedFile) => {
+    if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
+      setError('Veuillez sélectionner un fichier CSV');
+      return;
+    }
+    setFile(selectedFile);
+    setError(null);
   };
 
   const handleSubmit = async () => {
@@ -79,14 +94,35 @@ function App() {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/analyze', formData, {
+      // First check if the API is healthy
+      const healthCheck = await axios.get(`${API_URL}/healthcheck`, { timeout: 5000 });
+      if (healthCheck.data.status !== 'healthy') {
+        throw new Error('Le service est temporairement indisponible');
+      }
+
+      // Proceed with file upload
+      const response = await axios.post(`${API_URL}/analyze`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: API_TIMEOUT
       });
-      setResults(response.data);
+
+      if (response.data.success) {
+        setResults({
+          heatmap: `${API_URL}/image/${response.data.heatmap}`,
+          prediction_plot: `${API_URL}/image/${response.data.prediction_plot}`
+        });
+      } else {
+        throw new Error(response.data.error || 'Erreur lors de l\'analyse');
+      }
     } catch (err) {
-      setError('Erreur lors de l\'analyse: ' + err.message);
+      console.error('Analysis error:', err);
+      setError(
+        err.response?.data?.error || 
+        err.message || 
+        'Erreur lors de l\'analyse. Veuillez réessayer.'
+      );
     } finally {
       setLoading(false);
     }
@@ -100,162 +136,109 @@ function App() {
         className="content-wrapper"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.5 }}
       >
-        <header className="header-container">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
+        <header className="App-header">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <PsychologyIcon className="header-icon" />
-          </motion.div>
-          
-          <h1>Analyse IA du Paludisme</h1>
-          <p className="subtitle">Analyse avancée des données sur le paludisme en Afrique utilisant l'Intelligence Artificielle</p>
-          
-          <div className="model-info">
-            <motion.div
-              className="ai-badge"
-              whileHover={{ scale: 1.05 }}
-            >
-              <AutoGraphIcon sx={{ fontSize: 16, marginRight: 1 }} />
-              Régression Avancée
-            </motion.div>
-            <motion.div
-              className="ai-badge"
-              whileHover={{ scale: 1.05 }}
-            >
-              <BiotechIcon sx={{ fontSize: 16, marginRight: 1 }} />
-              Analyse Prédictive
-            </motion.div>
-          </div>
-        </header>
-
-        <motion.div 
-          className="upload-section"
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          whileHover={{ scale: 1.02 }}
-        >
-          <CloudUploadIcon className="upload-icon" />
-          <h3 className="upload-text">Déposez votre fichier CSV ici</h3>
-          <p className="or-text">ou</p>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            className="file-input"
-            id="file-input"
-          />
-          <label htmlFor="file-input" className="file-button">
-            Sélectionner un fichier
-          </label>
-          
-          {file && (
-            <motion.div 
-              className="selected-file"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p>Fichier sélectionné: {file.name}</p>
-              <button 
-                onClick={handleSubmit}
-                className="analyze-button"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="processing-animation">
-                      <div className="processing-circle"></div>
-                      <div className="processing-inner"></div>
-                    </div>
-                    Analyse IA en cours...
-                  </>
-                ) : (
-                  'Lancer l\'analyse IA'
-                )}
-              </button>
-            </motion.div>
-          )}
-        </motion.div>
-
-        {error && (
-          <motion.div
+            Analyse du Paludisme en Afrique
+          </motion.h1>
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="error-message"
+            transition={{ delay: 0.4 }}
+            className="subtitle"
           >
-            {error}
-          </motion.div>
-        )}
+            Analyse prédictive et visualisation des données sur le paludisme
+          </motion.p>
+        </header>
 
-        {results && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="results-section"
-          >
-            <h2 className="results-title">Résultats de l'Analyse IA</h2>
-            
-            <div className="metrics">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="metric-card"
+        <main>
+          <section className="upload-section">
+            <div
+              className={`drop-zone ${dragActive ? 'active' : ''}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <CloudUploadIcon className="upload-icon" />
+              <input
+                type="file"
+                onChange={handleFileChange}
+                accept=".csv"
+                className="file-input"
+              />
+              <p className="upload-text">
+                {file ? file.name : "Glissez-déposez votre fichier CSV ou cliquez pour sélectionner"}
+              </p>
+              {error && <p className="error-message">{error}</p>}
+              <button
+                onClick={handleSubmit}
+                className="analyze-button"
+                disabled={!file || loading}
               >
-                <div className="model-accuracy">Précision du Modèle</div>
-                <h3 className="metric-title">Score R²</h3>
-                <p className="metric-value">{results.metrics.r2.toFixed(3)}</p>
-                <span className="metric-description">Coefficient de détermination du modèle IA</span>
-              </motion.div>
-              
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="metric-card"
-              >
-                <div className="model-accuracy">Erreur de Prédiction</div>
-                <h3 className="metric-title">RMSE</h3>
-                <p className="metric-value">{results.metrics.rmse.toFixed(3)}</p>
-                <span className="metric-description">Erreur quadratique moyenne des prédictions</span>
-              </motion.div>
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Analyser les Données"
+                )}
+              </button>
             </div>
+          </section>
 
-            <div className="visualizations">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="viz-card"
-              >
-                <h3 className="viz-title">Carte de Chaleur de la Prévention</h3>
-                <motion.img 
-                  src={`http://localhost:5000${results.visualizations.heatmap}`} 
-                  alt="Heatmap" 
-                  className="viz-image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                />
-              </motion.div>
-              
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="viz-card"
-              >
-                <h3 className="viz-title">Graphique de Précision des Prédictions</h3>
-                <motion.img 
-                  src={`http://localhost:5000${results.visualizations.prediction}`} 
-                  alt="Prediction Plot" 
-                  className="viz-image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                />
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
+          {results && (
+            <motion.section
+              className="results-section"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="visualization-grid">
+                <motion.div
+                  className="visualization-card"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h3 className="viz-title">Carte de Chaleur de la Prévention</h3>
+                  {results.heatmap && (
+                    <motion.img 
+                      src={results.heatmap} 
+                      alt="Heatmap" 
+                      className="viz-image"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    />
+                  )}
+                </motion.div>
+
+                <motion.div
+                  className="visualization-card"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <h3 className="viz-title">Graphique de Précision des Prédictions</h3>
+                  {results.prediction_plot && (
+                    <motion.img 
+                      src={results.prediction_plot} 
+                      alt="Prediction Plot" 
+                      className="viz-image"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    />
+                  )}
+                </motion.div>
+              </div>
+            </motion.section>
+          )}
+        </main>
       </motion.div>
     </div>
   );

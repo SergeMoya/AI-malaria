@@ -1,0 +1,30 @@
+# Development directories
+__pycache__
+*.pyc
+.git
+.env.local
+.venv
+venv
+env
+.env
+
+# Large directories not needed in production
+HQ images
+data
+output
+uploads/*
+!uploads/.gitkeep
+
+# Frontend (since it's deployed separately)
+frontend
+
+# Development files
+*.log
+.DS_Store
+.vscode
+*.ipynb
+
+# Keep only necessary static files
+static/*
+!static/prediction_accuracy_plot_fr.png
+!static/prevention_heatmap.png

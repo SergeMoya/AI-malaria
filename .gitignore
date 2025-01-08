@@ -1,6 +1,12 @@
 __pycache__/
 *.pyc
+node_modules/
 .env
-.venv/
-.idea/
-.vscode/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+tmp/*
+!tmp/.gitkeep
+uploads/*
+!uploads/.gitkeep

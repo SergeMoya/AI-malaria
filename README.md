@@ -1,63 +1,77 @@
-# Malaria Prevention Analysis in Africa
+# Analyse du Paludisme en Afrique
 
-This project analyzes the effectiveness of preventive measures against malaria in African countries using machine learning techniques.
+Application d'analyse prédictive du paludisme utilisant Python (Flask) et React.
 
-## Project Structure
+## Structure du Projet
 
 ```
 malaria/
-├── malaria_analysis.py    # Main analysis script
-├── requirements.txt       # Python dependencies
-├── DatasetAfricaMalaria.csv  # Input dataset (not included)
-└── output/               # Generated visualizations
-    ├── prevention_effectiveness_heatmap.png
-    └── prediction_accuracy_plot.png
+├── api/                # Backend Flask
+│   ├── app.py         # Point d'entrée Flask
+│   └── malaria_analysis_french.py  # Logique d'analyse
+├── frontend/          # Frontend React
+├── data/             # Données d'exemple
+└── static/           # Fichiers statiques
 ```
 
-## Setup and Installation
+## Technologies Utilisées
 
-1. Create a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+- **Backend**: Flask (Python 3.12)
+- **Frontend**: React avec Material-UI
+- **Analyse de Données**: pandas, scikit-learn
+- **Visualisation**: matplotlib, seaborn
 
-2. Install required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Configuration Requise
 
-## Usage
+- Python 3.12
+- Node.js 18+
+- npm ou yarn
 
-1. Place your `DatasetAfricaMalaria.csv` file in the project root directory
-2. Run the analysis script:
-   ```bash
-   python malaria_analysis.py
-   ```
+## Installation
 
-3. Check the `output` directory for generated visualizations:
-   - `prevention_effectiveness_heatmap.png`: Shows correlation between preventive measures and malaria incidence
-   - `prediction_accuracy_plot.png`: Displays model prediction accuracy with R² and RMSE metrics
+### Backend
 
-## Dataset Format
+```bash
+# Installer les dépendances Python
+pip install -r requirements.txt
 
-The input CSV file should contain the following columns:
-- country: Name of the African country
-- bed_nets: Data about bed net usage
-- antimalarial_medication: Data about antimalarial medication usage
-- malaria_incidence: Target variable showing malaria cases
+# Lancer le serveur Flask
+python -m flask --app api/app run
+```
 
-## Output
+### Frontend
 
-The script generates:
-1. A heatmap showing the effectiveness of different prevention methods across countries
-2. A prediction accuracy plot comparing actual vs. predicted malaria incidence
-3. Printed performance metrics (R² and RMSE)
+```bash
+cd frontend
+npm install
+npm start
+```
 
-## Error Handling
+## Déploiement
 
-The script includes error handling for:
-- Missing input file
-- Data loading issues
-- Visualization creation errors
-- Model training problems
+### Backend (Vercel)
+
+Le backend est automatiquement déployé sur Vercel lors du push sur la branche principale.
+
+### Frontend (Vercel)
+
+1. Mettre à jour .env.production avec l'URL de l'API
+2. Déployer le frontend sur Vercel
+
+## Variables d'Environnement
+
+### Production
+- `REACT_APP_API_URL`: URL de l'API en production
+
+### Développement
+- `REACT_APP_API_URL`: http://localhost:5000/api
+
+## Tests
+
+```bash
+python test_api.py
+```
+
+## Licence
+
+MIT
