@@ -36,6 +36,17 @@ def get_model():
             _model = joblib.load(model_path)
     return _model
 
+@app.route('/')
+def root():
+    return jsonify({
+        "message": "Welcome to Malaria Detection API",
+        "version": "1.0.0",
+        "endpoints": {
+            "healthcheck": "/api/healthcheck",
+            "analyze": "/api/analyze"
+        }
+    }), 200
+
 @app.route('/api/healthcheck')
 def healthcheck():
     return jsonify({"status": "healthy", "version": "1.0.0"}), 200
