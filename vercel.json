@@ -6,20 +6,25 @@
             "use": "@vercel/python",
             "config": {
                 "runtime": "python3.9",
-                "handler": "app",
-                "mode": "edge"
+                "maxLambdaSize": "250mb"
             }
         }
     ],
     "routes": [
         {
             "src": "/api/(.*)",
-            "dest": "/api/index.py",
-            "continue": true
+            "dest": "/api/index.py"
         }
     ],
+    "functions": {
+        "api/index.py": {
+            "memory": 3008,
+            "maxDuration": 60
+        }
+    },
     "env": {
         "PYTHONPATH": ".",
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONOPTIMIZE": "2"
     }
 }
