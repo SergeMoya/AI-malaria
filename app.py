@@ -4,14 +4,15 @@ import os
 from malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
 
 app = Flask(__name__, static_folder='static')
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# Ensure upload and static directories exist
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+STATIC_FOLDER = os.path.join(os.getcwd(), 'static')
 
-if not os.path.exists('static'):
-    os.makedirs('static')
+for folder in [UPLOAD_FOLDER, STATIC_FOLDER]:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_data():
@@ -35,8 +36,8 @@ def analyze_data():
     heatmap_path = 'prevention_effectiveness_heatmap_fr.png'
     prediction_path = 'prediction_accuracy_plot_fr.png'
 
-    create_prevention_heatmap(df, os.path.join('static', heatmap_path))
-    r2, rmse = train_model_and_create_prediction_plot(df, os.path.join('static', prediction_path))
+    create_prevention_heatmap(df, os.path.join(STATIC_FOLDER, heatmap_path))
+    r2, rmse = train_model_and_create_prediction_plot(df, os.path.join(STATIC_FOLDER, prediction_path))
 
     return jsonify({
         'success': True,
@@ -52,7 +53,8 @@ def analyze_data():
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
-    return send_from_directory('static', filename)
+    return send_from_directory(STATIC_FOLDER, filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port)
