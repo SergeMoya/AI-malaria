@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 import { motion } from 'framer-motion';
@@ -8,6 +8,7 @@ import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import BiotechIcon from '@mui/icons-material/Biotech';
 import { CircularProgress } from '@mui/material';
+import Chart from 'chart.js/auto';
 
 function App() {
   const [file, setFile] = useState(null);
@@ -15,34 +16,73 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const preventionChartRef = useRef(null);
+  const predictionChartRef = useRef(null);
 
-  // Neural network background animation
   useEffect(() => {
-    const createNeuralBackground = () => {
-      const bg = document.querySelector('.neural-bg');
-      if (!bg) return;
-
-      // Clear existing nodes
-      bg.innerHTML = '';
-
-      // Create nodes
-      for (let i = 0; i < 50; i++) {
-        const node = document.createElement('div');
-        node.className = 'neural-node';
-        node.style.left = `${Math.random() * 100}%`;
-        node.style.top = `${Math.random() * 100}%`;
-        node.style.animationDelay = `${Math.random() * 2}s`;
-        bg.appendChild(node);
+    if (results) {
+      // Create Prevention Chart
+      if (preventionChartRef.current) {
+        const ctx = preventionChartRef.current.getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: results.prevention_data.map(d => d.prevention_method),
+            datasets: [{
+              label: 'Correlation avec les cas confirmés',
+              data: results.prevention_data.map(d => d.correlation),
+              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
       }
-    };
 
-    createNeuralBackground();
-    window.addEventListener('resize', createNeuralBackground);
-
-    return () => {
-      window.removeEventListener('resize', createNeuralBackground);
-    };
-  }, []);
+      // Create Prediction Chart
+      if (predictionChartRef.current) {
+        const ctx = predictionChartRef.current.getContext('2d');
+        new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [{
+              label: 'Prédictions vs Réalité',
+              data: results.prediction_data.actual.map((actual, i) => ({
+                x: actual,
+                y: results.prediction_data.predicted[i]
+              })),
+              backgroundColor: 'rgba(255, 99, 132, 0.6)'
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Valeurs Réelles'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Valeurs Prédites'
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+  }, [results]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -79,7 +119,11 @@ function App() {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/analyze', formData, {
+      const API_URL = process.env.NODE_ENV === 'production' 
+        ? 'https://your-vercel-backend-url.vercel.app/api/analyze'
+        : 'http://localhost:8000/api/analyze';
+        
+      const response = await axios.post(API_URL, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -167,13 +211,10 @@ function App() {
                 disabled={loading}
               >
                 {loading ? (
-                  <>
-                    <div className="processing-animation">
-                      <div className="processing-circle"></div>
-                      <div className="processing-inner"></div>
-                    </div>
-                    Analyse IA en cours...
-                  </>
+                  <div className="processing-animation">
+                    <div className="processing-circle"></div>
+                    <div className="processing-inner"></div>
+                  </div>
                 ) : (
                   'Lancer l\'analyse IA'
                 )}
@@ -193,68 +234,40 @@ function App() {
         )}
 
         {results && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="results-section"
-          >
-            <h2 className="results-title">Résultats de l'Analyse IA</h2>
-            
-            <div className="metrics">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="metric-card"
-              >
-                <div className="model-accuracy">Précision du Modèle</div>
-                <h3 className="metric-title">Score R²</h3>
-                <p className="metric-value">{results.metrics.r2.toFixed(3)}</p>
-                <span className="metric-description">Coefficient de détermination du modèle IA</span>
-              </motion.div>
-              
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="metric-card"
-              >
-                <div className="model-accuracy">Erreur de Prédiction</div>
-                <h3 className="metric-title">RMSE</h3>
-                <p className="metric-value">{results.metrics.rmse.toFixed(3)}</p>
-                <span className="metric-description">Erreur quadratique moyenne des prédictions</span>
-              </motion.div>
+          <div className="results-container">
+            <div className="metrics-container">
+              <div className="metric">
+                <h4>Score R²</h4>
+                <p>{results.prediction_data.metrics.r2.toFixed(3)}</p>
+              </div>
+              <div className="metric">
+                <h4>RMSE</h4>
+                <p>{results.prediction_data.metrics.rmse.toFixed(3)}</p>
+              </div>
             </div>
 
             <div className="visualizations">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
+              <motion.div 
                 className="viz-card"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
               >
-                <h3 className="viz-title">Carte de Chaleur de la Prévention</h3>
-                <motion.img 
-                  src={`http://localhost:5000${results.visualizations.heatmap}`} 
-                  alt="Heatmap" 
-                  className="viz-image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                />
+                <h3 className="viz-title">Corrélation des Méthodes de Prévention</h3>
+                <canvas ref={preventionChartRef} className="viz-canvas" />
               </motion.div>
-              
-              <motion.div
-                whileHover={{ scale: 1.02 }}
+
+              <motion.div 
                 className="viz-card"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
               >
-                <h3 className="viz-title">Graphique de Précision des Prédictions</h3>
-                <motion.img 
-                  src={`http://localhost:5000${results.visualizations.prediction}`} 
-                  alt="Prediction Plot" 
-                  className="viz-image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                />
+                <h3 className="viz-title">Précision des Prédictions</h3>
+                <canvas ref={predictionChartRef} className="viz-canvas" />
               </motion.div>
             </div>
-          </motion.div>
+          </div>
         )}
       </motion.div>
     </div>

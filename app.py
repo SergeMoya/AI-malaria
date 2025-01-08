@@ -1,18 +1,15 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-from malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
+from malaria_analysis_french import load_and_clean_data, get_prevention_data, train_model_and_get_predictions
 
-app = Flask(__name__, static_folder='static')
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+app = Flask(__name__)
+CORS(app)
 
-# Ensure upload and static directories exist
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-STATIC_FOLDER = os.path.join(os.getcwd(), 'static')
-
-for folder in [UPLOAD_FOLDER, STATIC_FOLDER]:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+# Ensure upload directory exists
+UPLOAD_FOLDER = '/tmp'  # Use /tmp for Vercel
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_data():
@@ -27,33 +24,35 @@ def analyze_data():
     filepath = os.path.join(UPLOAD_FOLDER, 'DatasetAfricaMalaria.csv')
     file.save(filepath)
 
-    # Process the data
-    df = load_and_clean_data(filepath)
-    if df is None:
-        return jsonify({'error': 'Error loading data'}), 500
+    try:
+        # Process the data
+        df = load_and_clean_data(filepath)
+        if df is None:
+            return jsonify({'error': 'Error loading data'}), 500
 
-    # Generate visualizations
-    heatmap_path = 'prevention_effectiveness_heatmap_fr.png'
-    prediction_path = 'prediction_accuracy_plot_fr.png'
+        # Get analysis data
+        prevention_data = get_prevention_data(df)
+        prediction_data = train_model_and_get_predictions(df)
 
-    create_prevention_heatmap(df, os.path.join(STATIC_FOLDER, heatmap_path))
-    r2, rmse = train_model_and_create_prediction_plot(df, os.path.join(STATIC_FOLDER, prediction_path))
+        # Clean up the uploaded file
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
-    return jsonify({
-        'success': True,
-        'metrics': {
-            'r2': float(r2) if r2 is not None else None,
-            'rmse': float(rmse) if rmse is not None else None
-        },
-        'visualizations': {
-            'heatmap': f'/static/{heatmap_path}',
-            'prediction': f'/static/{prediction_path}'
-        }
-    })
+        return jsonify({
+            'success': True,
+            'prevention_data': prevention_data,
+            'prediction_data': prediction_data
+        })
+    except Exception as e:
+        # Clean up the uploaded file in case of error
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(STATIC_FOLDER, filename)
+# Add a health check endpoint
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy'}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
