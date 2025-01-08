@@ -11,6 +11,9 @@ from .malaria_analysis_french import load_and_clean_data, create_prevention_heat
 app = Flask(__name__)
 CORS(app)
 
+# Edge Function configuration
+app.config['EDGE_FUNCTION'] = True
+
 # Ensure tmp directory exists
 tmp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tmp')
 if not os.path.exists(tmp_dir):
@@ -23,61 +26,49 @@ def healthcheck():
 @app.route('/api/analyze', methods=['POST'])
 def analyze_data():
     try:
+        # Get the uploaded file from the request
         if 'file' not in request.files:
-            return jsonify({'error': 'No file provided'}), 400
+            return jsonify({'error': 'No file uploaded'}), 400
         
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
-        
-        if not file.filename.endswith('.csv'):
-            return jsonify({'error': 'Only CSV files are supported'}), 400
 
-        # Save file temporarily
-        temp_path = os.path.join(tmp_dir, 'uploaded_data.csv')
+        # Save the file temporarily
+        temp_path = os.path.join(tmp_dir, 'temp_data.csv')
         file.save(temp_path)
 
-        try:
-            # Load and process data
-            df = load_and_clean_data(temp_path)
-            
-            # Generate visualizations
-            heatmap_path = os.path.join(tmp_dir, 'prevention_heatmap.png')
-            prediction_path = os.path.join(tmp_dir, 'prediction_accuracy_plot_fr.png')
-            
-            create_prevention_heatmap(df, heatmap_path)
-            train_model_and_create_prediction_plot(df, prediction_path)
-            
-            return jsonify({
-                'success': True,
-                'heatmap': 'prevention_heatmap.png',
-                'prediction_plot': 'prediction_accuracy_plot_fr.png'
-            })
-
-        except Exception as e:
-            print("Error processing data:", str(e))
-            traceback.print_exc()
-            return jsonify({'error': f'Error processing data: {str(e)}'}), 500
-
-        finally:
-            # Clean up temporary file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+        # Process the data
+        df = load_and_clean_data(temp_path)
+        
+        # Create visualizations
+        heatmap_path = os.path.join(tmp_dir, 'prevention_heatmap.png')
+        create_prevention_heatmap(df, heatmap_path)
+        
+        prediction_path = os.path.join(tmp_dir, 'prediction_accuracy.png')
+        train_model_and_create_prediction_plot(df, prediction_path)
+        
+        return jsonify({
+            'message': 'Analysis completed successfully',
+            'heatmap': '/api/image/prevention_heatmap.png',
+            'prediction': '/api/image/prediction_accuracy.png'
+        }), 200
 
     except Exception as e:
-        print("Error in analyze_data:", str(e))
+        print(f"Error processing data: {str(e)}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/image/<filename>')
 def serve_image(filename):
     try:
-        image_path = os.path.join(tmp_dir, filename)
-        if not os.path.exists(image_path):
-            return jsonify({'error': 'Image not found'}), 404
-        return send_file(image_path, mimetype='image/png')
+        return send_file(
+            os.path.join(tmp_dir, filename),
+            mimetype='image/png'
+        )
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# For local development
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5328)
