@@ -10,7 +10,7 @@ import BiotechIcon from '@mui/icons-material/Biotech';
 import { CircularProgress } from '@mui/material';
 
 // API configuration
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://ai-malaria-backend.onrender.com/api';
 const API_TIMEOUT = 30000; // 30 seconds
 
 function App() {
@@ -110,8 +110,8 @@ function App() {
 
       if (response.data.success) {
         setResults({
-          heatmap: `${API_URL}/image/${response.data.heatmap}`,
-          prediction_plot: `${API_URL}/image/${response.data.prediction_plot}`
+          heatmap: response.data.heatmap,
+          prediction_plot: response.data.prediction_plot
         });
       } else {
         throw new Error(response.data.error || 'Erreur lors de l\'analyse');
