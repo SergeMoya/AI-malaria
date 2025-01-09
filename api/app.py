@@ -54,11 +54,6 @@ def after_request(response):
     response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
     return response
 
-# Ensure tmp directory exists
-tmp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tmp')
-if not os.path.exists(tmp_dir):
-    os.makedirs(tmp_dir)
-
 def generate_heatmap():
     """
     Generates a heatmap visualization of malaria prevention/prevalence data.
@@ -128,16 +123,33 @@ def analyze():
             logger.error("Empty filename received")
             return jsonify({"error": "No file selected"}), 400
 
-        # Generate visualizations
-        heatmap = generate_heatmap()
-        accuracy = generate_prediction_accuracy()
+        # Save file temporarily
+        tmp_dir = os.path.join(os.path.dirname(__file__), 'tmp')
+        os.makedirs(tmp_dir, exist_ok=True)
+        file_path = os.path.join(tmp_dir, file.filename)
+        file.save(file_path)
 
-        return jsonify({
-            "status": "success",
-            "heatmap": heatmap,
-            "accuracy": accuracy,
-            "message": "Analysis completed successfully"
-        })
+        try:
+            # Read the CSV file
+            df = pd.read_csv(file_path)
+            logger.info(f"Successfully read CSV file with shape: {df.shape}")
+
+            # Generate visualizations
+            heatmap = generate_heatmap()
+            accuracy = generate_prediction_accuracy()
+
+            return jsonify({
+                "status": "success",
+                "heatmap": heatmap,
+                "accuracy": accuracy,
+                "message": "Analysis completed successfully",
+                "data_shape": df.shape
+            })
+
+        finally:
+            # Clean up temporary file
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
     except Exception as e:
         logger.error(f"Error during analysis: {str(e)}")
