@@ -22,7 +22,10 @@ CORS(app, resources={
     r"/api/*": {
         "origins": [
             "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
-            "http://localhost:3000"  # For local development
+            "https://ai-malaria-frontend.vercel.app",
+            "https://ai-malaria-frontend.onrender.com",
+            "http://localhost:3000",  # For local development
+            "http://127.0.0.1:3000"   # Alternative local development URL
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
@@ -31,11 +34,20 @@ CORS(app, resources={
 
 @app.after_request
 def after_request(response):
-    header = response.headers
-    header['Access-Control-Allow-Origin'] = 'https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app'
-    header['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    header['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    header['Access-Control-Max-Age'] = '86400'  # 24 hours
+    origin = request.headers.get('Origin')
+    allowed_origins = [
+        "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
+        "https://ai-malaria-frontend.vercel.app",
+        "https://ai-malaria-frontend.onrender.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ]
+    
+    if origin in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
     return response
 
 # Update the tmp directory path to be absolute and within the app directory
