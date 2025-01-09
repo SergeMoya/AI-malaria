@@ -16,24 +16,44 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Update CORS configuration to be more specific
 CORS(app, resources={
-    r"/*": {
+    r"/api/*": {
         "origins": [
-            "http://localhost:3000",
-            "https://ai-malaria.onrender.com",
-            "https://ai-malaria-frontend.vercel.app",
-            "https://ai-malaria-frontend-duoyxf2w8-sergemoyas-projects.vercel.app",
-            "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app"
+            "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
+            "http://localhost:3000"  # For local development
         ],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type", "Authorization"]
     }
 })
 
-# Ensure tmp directory exists
-tmp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tmp')
+@app.after_request
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = 'https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app'
+    header['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    header['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    header['Access-Control-Max-Age'] = '86400'  # 24 hours
+    return response
+
+# Update the tmp directory path to be absolute and within the app directory
+tmp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tmp')
 if not os.path.exists(tmp_dir):
     os.makedirs(tmp_dir)
+
+# Add root endpoint to match what's shown in the API response
+@app.route('/')
+def root():
+    return jsonify({
+        "endpoints": {
+            "/api/analyze": "Analyze malaria data (POST)",
+            "/api/healthcheck": "Check API health status"
+        },
+        "status": "online",
+        "version": "1.0"
+    })
 
 def generate_heatmap():
     # Sample data for the heatmap
@@ -85,6 +105,10 @@ def analyze():
             logger.error("Empty filename received")
             return jsonify({"error": "No file selected"}), 400
 
+        if not file.filename.endswith('.csv'):
+            logger.error("Invalid file type")
+            return jsonify({"error": "Only CSV files are allowed"}), 400
+
         logger.info(f"Processing file: {file.filename}")
         
         # Save the file temporarily
@@ -93,8 +117,12 @@ def analyze():
         logger.info(f"File saved to: {temp_path}")
 
         # Generate visualizations
-        heatmap = generate_heatmap()
-        prediction_accuracy = generate_prediction_accuracy()
+        try:
+            heatmap = generate_heatmap()
+            prediction_accuracy = generate_prediction_accuracy()
+        except Exception as viz_error:
+            logger.error(f"Visualization error: {str(viz_error)}")
+            return jsonify({"error": "Error generating visualizations"}), 500
 
         return jsonify({
             "message": "Analyse complétée avec succès",
