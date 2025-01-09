@@ -7,19 +7,24 @@
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/manifest.json",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
         },
         {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,POST,OPTIONS"
-        },
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
         {
-          "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Authorization"
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     }
