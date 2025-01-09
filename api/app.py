@@ -20,7 +20,20 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)
+
+# Configure CORS with specific origins
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:3000",
+            "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
+            "https://ai-malaria-frontend-ggig63e2t-sergemoyas-projects.vercel.app"
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
 
 # Add CORS headers to all responses
 @app.after_request
@@ -28,11 +41,17 @@ def after_request(response):
     """
     Add CORS headers to all responses.
     """
-    header = response.headers
-    header['Access-Control-Allow-Origin'] = '*'
-    header['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    header['Access-Control-Allow-Headers'] = 'Content-Type'
-    header['Access-Control-Max-Age'] = '86400'  # 24 hours
+    origin = request.headers.get('Origin')
+    if origin in [
+        "http://localhost:3000",
+        "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
+        "https://ai-malaria-frontend-ggig63e2t-sergemoyas-projects.vercel.app"
+    ]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
     return response
 
 # Ensure tmp directory exists
