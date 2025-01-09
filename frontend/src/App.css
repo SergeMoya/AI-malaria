@@ -156,83 +156,85 @@ h1 {
 }
 
 .upload-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.upload-section {
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 3rem;
+  padding: 3rem 2rem;
+  margin: 2rem auto;
   max-width: 600px;
-  margin: 0 auto 3rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
-.upload-section:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25);
-  border-color: rgba(255, 255, 255, 0.3);
+.upload-container:hover, .upload-container.drag-active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.upload-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.upload-container:hover::before {
+  opacity: 1;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .upload-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 4rem !important;
+  opacity: 0.9;
+  color: #fff;
+  transition: transform 0.3s ease;
 }
 
-.file-input {
-  display: none;
+.upload-container:hover .upload-icon {
+  transform: translateY(-5px);
 }
 
-.file-label {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-block;
-  margin: 1rem 0;
+.upload-content p {
+  font-size: 1.2rem;
+  margin: 0;
+  opacity: 0.9;
 }
 
-.file-label:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.selected-file {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  font-size: 0.9rem;
-}
-
-.analyze-button {
-  background: linear-gradient(45deg, #4CAF50, #45a049);
+.upload-button {
+  background-color: #4caf50;
   color: white;
-  border: none;
-  padding: 1rem 2.5rem;
-  border-radius: 10px;
+  padding: 1rem 2rem;
+  border-radius: 30px;
   cursor: pointer;
-  font-size: 1.1rem;
-  margin-top: 1.5rem;
   transition: all 0.3s ease;
+  font-size: 1.1rem;
+  border: none;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
-.analyze-button:hover:not(:disabled) {
+.upload-button:hover {
+  background-color: #45a049;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-}
-
-.analyze-button:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
-  box-shadow: none;
 }
 
 .error-message {
@@ -358,6 +360,26 @@ h1 {
   gap: 2rem;
 }
 
+.visualization-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin: 2rem auto;
+  max-width: 800px;
+}
+
+.visualization-card h4 {
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+}
+
+.visualization-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .viz-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -413,8 +435,32 @@ h1 {
     font-size: 2rem;
   }
 
-  .upload-section {
-    padding: 2rem;
+  .upload-container {
+    padding: 2rem 1rem;
+    margin: 1rem;
+  }
+
+  .upload-icon {
+    font-size: 3rem !important;
+  }
+
+  .upload-content p {
+    font-size: 1rem;
+  }
+
+  .upload-button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .visualization-card {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .visualization-card h4 {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
   }
 
   .metrics,

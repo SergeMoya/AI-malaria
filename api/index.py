@@ -36,7 +36,7 @@ def get_model():
             _model = joblib.load(model_path)
     return _model
 
-@app.route('/')
+@app.route('/api/')
 def root():
     return jsonify({
         "message": "Welcome to Malaria Detection API",
@@ -49,18 +49,10 @@ def root():
 
 @app.route('/api/healthcheck')
 def healthcheck():
-    return jsonify({"status": "healthy", "version": "1.0.0"}), 200
+    return jsonify({"status": "healthy"}), 200
 
-@app.route('/api/analyze', methods=['POST'])
-def analyze_data():
+def analyze_data(file):
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-
         # Save the file temporarily
         temp_path = os.path.join(tmp_dir, 'temp_data.csv')
         file.save(temp_path)
@@ -99,17 +91,36 @@ def analyze_data():
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
         
-        return jsonify({
+        return {
             'message': 'Analysis completed successfully',
             'heatmap': '/api/image/prevention_heatmap.png',
             'prediction': '/api/image/prediction_accuracy.png',
             'results': final_results.to_dict(orient='records')
-        }), 200
+        }
 
     except Exception as e:
         print(f"Error processing data: {str(e)}")
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return {"error": str(e)}
+
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+
+        # Process the file and get results
+        results = analyze_data(file)
+        return jsonify(results), 200
+
+    except Exception as e:
+        print(f"Error in analyze endpoint: {str(e)}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 def process_chunk(chunk):
     # Initialize model if needed
