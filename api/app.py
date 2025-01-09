@@ -21,6 +21,9 @@ CORS(app, resources={
         "origins": [
             "http://localhost:3000",
             "https://ai-malaria.onrender.com",
+            "https://ai-malaria-frontend.vercel.app",
+            "https://ai-malaria-frontend-duoyxf2w8-sergemoyas-projects.vercel.app",
+            "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app"
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
