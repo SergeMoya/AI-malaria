@@ -2,16 +2,12 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import traceback
-import sys
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 from pathlib import Path
-import joblib
 import logging
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 from io import BytesIO
 import base64
 
@@ -21,47 +17,52 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Configure CORS with specific origins
+# Update CORS configuration to be more specific
 CORS(app, resources={
-    r"/*": {
+    r"/api/*": {
         "origins": [
-            "http://localhost:3000",
             "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
-            "https://ai-malaria-frontend-ggig63e2t-sergemoyas-projects.vercel.app"
+            "http://localhost:3000"  # For local development
         ],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": True
+        "allow_headers": ["Content-Type", "Authorization"]
     }
 })
 
-# Add CORS headers to all responses
 @app.after_request
 def after_request(response):
-    """
-    Add CORS headers to all responses.
-    """
-    origin = request.headers.get('Origin')
-    if origin in [
-        "http://localhost:3000",
-        "https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app",
-        "https://ai-malaria-frontend-ggig63e2t-sergemoyas-projects.vercel.app"
-    ]:
-        response.headers['Access-Control-Allow-Origin'] = origin
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
-    response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = 'https://ai-malaria-frontend-git-backup-main-sergemoyas-projects.vercel.app'
+    header['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    header['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    header['Access-Control-Max-Age'] = '86400'  # 24 hours
     return response
 
+# Update the tmp directory path to be absolute and within the app directory
+tmp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tmp')
+if not os.path.exists(tmp_dir):
+    os.makedirs(tmp_dir)
+
+# Add root endpoint to match what's shown in the API response
+@app.route('/')
+def root():
+    return jsonify({
+        "endpoints": {
+            "/api/analyze": "Analyze malaria data (POST)",
+            "/api/healthcheck": "Check API health status"
+        },
+        "status": "online",
+        "version": "1.0"
+    })
+
 def generate_heatmap():
-    """
-    Generates a heatmap visualization of malaria prevention/prevalence data.
-    """
-    data = np.random.rand(10, 10)
+    # Sample data for the heatmap
+    data = np.random.rand(10, 10)  # Replace with your actual prevention data
     plt.figure(figsize=(10, 8))
     sns.heatmap(data, cmap='YlOrRd')
     plt.title('Carte de Chaleur de la Prévention')
+    
+    # Save to bytes
     buf = BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     plt.close()
@@ -69,49 +70,30 @@ def generate_heatmap():
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 def generate_prediction_accuracy():
-    """
-    Generates a line graph showing prediction accuracy.
-    """
+    # Sample data for prediction accuracy
     x = np.linspace(0, 10, 100)
     y = 1 - np.exp(-x/2) + np.random.normal(0, 0.1, 100)
+    
     plt.figure(figsize=(10, 6))
     plt.plot(x, y)
-    plt.title('Précision des Prédictions')
+    plt.title('Graphique de Précision des Prédictions')
     plt.xlabel('Temps')
     plt.ylabel('Précision')
+    
+    # Save to bytes
     buf = BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     plt.close()
     buf.seek(0)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
-@app.route('/')
-def root():
-    """
-    Root endpoint - provides API information
-    """
-    return jsonify({
-        "status": "online",
-        "version": "1.0",
-        "endpoints": {
-            "/api/healthcheck": "Check API health status",
-            "/api/analyze": "Analyze malaria data (POST)"
-        }
-    })
-
 @app.route('/api/healthcheck')
 def healthcheck():
-    """
-    Healthcheck endpoint
-    """
     logger.info("Healthcheck endpoint called")
     return jsonify({"status": "healthy"}), 200
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
-    """
-    Analyze uploaded data and return visualizations
-    """
     logger.info("Analyze endpoint called")
     try:
         if 'file' not in request.files:
@@ -123,48 +105,44 @@ def analyze():
             logger.error("Empty filename received")
             return jsonify({"error": "No file selected"}), 400
 
-        # Save file temporarily
-        tmp_dir = os.path.join(os.path.dirname(__file__), 'tmp')
-        os.makedirs(tmp_dir, exist_ok=True)
-        file_path = os.path.join(tmp_dir, file.filename)
-        file.save(file_path)
+        if not file.filename.endswith('.csv'):
+            logger.error("Invalid file type")
+            return jsonify({"error": "Only CSV files are allowed"}), 400
 
+        logger.info(f"Processing file: {file.filename}")
+        
+        # Save the file temporarily
+        temp_path = os.path.join(tmp_dir, 'temp_data.csv')
+        file.save(temp_path)
+        logger.info(f"File saved to: {temp_path}")
+
+        # Generate visualizations
         try:
-            # Read the CSV file
-            df = pd.read_csv(file_path)
-            logger.info(f"Successfully read CSV file with shape: {df.shape}")
-
-            # Generate visualizations
             heatmap = generate_heatmap()
-            accuracy = generate_prediction_accuracy()
+            prediction_accuracy = generate_prediction_accuracy()
+        except Exception as viz_error:
+            logger.error(f"Visualization error: {str(viz_error)}")
+            return jsonify({"error": "Error generating visualizations"}), 500
 
-            return jsonify({
-                "status": "success",
-                "heatmap": heatmap,
-                "accuracy": accuracy,
-                "message": "Analysis completed successfully",
-                "data_shape": df.shape
-            })
-
-        finally:
-            # Clean up temporary file
-            if os.path.exists(file_path):
-                os.remove(file_path)
+        return jsonify({
+            "message": "Analyse complétée avec succès",
+            "filename": file.filename,
+            "status": "success",
+            "heatmap": heatmap,
+            "prediction_accuracy": prediction_accuracy
+        }), 200
 
     except Exception as e:
-        logger.error(f"Error during analysis: {str(e)}")
+        logger.error(f"Error in analyze endpoint: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
+# Log all incoming requests
 @app.before_request
 def log_request_info():
-    """
-    Log incoming request information
-    """
     logger.debug('Headers: %s', request.headers)
     logger.debug('Body: %s', request.get_data())
     logger.debug('URL: %s', request.url)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000, debug=True)
