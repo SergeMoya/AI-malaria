@@ -9,3 +9,5 @@ services:
         value: 3.11.11
       - key: PYTHONUNBUFFERED
         value: "true"
+      - key: PYTHONPATH
+        value: "/opt/render/project/src/api"

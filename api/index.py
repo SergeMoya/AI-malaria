@@ -145,7 +145,7 @@ def analyze_data(file):
         final_results = pd.concat(results) if len(results) > 1 else results[0]
         
         # Import analysis functions only when needed
-        from .api.malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
+        from malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
 
         # Process the data
         df = load_and_clean_data(temp_path)
