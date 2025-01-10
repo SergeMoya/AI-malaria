@@ -15,6 +15,7 @@ function App() {
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Background animations setup
   useEffect(() => {
@@ -125,6 +126,40 @@ function App() {
     }
   };
 
+  const toggleMode = () => {
+    setIsDemoMode(!isDemoMode);
+    setError(null);
+    setResults(null);
+  };
+
+  const handleQuickDemo = async () => {
+    setLoading(true);
+    setError(null);
+    setUploadProgress(0);
+
+    try {
+      const healthCheck = await axios.get(endpoints.healthcheck, { timeout: 5000 });
+      if (healthCheck.data.status !== 'healthy') {
+        throw new Error('Le service est temporairement indisponible');
+      }
+
+      const response = await axios.get(endpoints.demo, {
+        timeout: API_TIMEOUT,
+      });
+
+      if (response.data && !response.data.error) {
+        setResults(response.data);
+      } else {
+        throw new Error(response.data.error || 'Erreur pendant l\'analyse');
+      }
+    } catch (err) {
+      console.error('Demo analysis error:', err);
+      setError(err.response?.data?.error || err.message || 'Erreur pendant l\'analyse. Veuillez réessayer.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="App">
       <div className="ai-particles" />
@@ -145,25 +180,52 @@ function App() {
           </p>
         </header>
 
-        <div className="upload-container" 
-             onDragEnter={handleDrag}
-             onDragLeave={handleDrag}
-             onDragOver={handleDrag}
-             onDrop={handleDrop}
-             onClick={() => document.getElementById('file-input').click()}>
-          <input
-            id="file-input"
-            type="file"
-            onChange={handleFileChange}
-            accept=".csv"
-            style={{ display: 'none' }}
-          />
-          <div className="upload-content">
-            <CloudUploadIcon className="upload-icon" />
-            <p className="upload-text-primary">Drag & drop your dataset here or click to browse</p>
-            <span className="upload-text-secondary">Supported format: CSV up to 25MB</span>
-          </div>
+        <div className="mode-toggle">
+          <button 
+            className={`toggle-button ${!isDemoMode ? 'active' : ''}`}
+            onClick={() => !isDemoMode || toggleMode()}
+          >
+            <CloudUploadIcon /> Upload Data
+          </button>
+          <button 
+            className={`toggle-button ${isDemoMode ? 'active' : ''}`}
+            onClick={() => isDemoMode || toggleMode()}
+          >
+            ▶ Demo Mode
+          </button>
         </div>
+
+        {!isDemoMode ? (
+          <div className="upload-container" 
+               onDragEnter={handleDrag}
+               onDragLeave={handleDrag}
+               onDragOver={handleDrag}
+               onDrop={handleDrop}
+               onClick={() => document.getElementById('file-input').click()}>
+            <input
+              id="file-input"
+              type="file"
+              onChange={handleFileChange}
+              accept=".csv"
+              style={{ display: 'none' }}
+            />
+            <div className="upload-content">
+              <CloudUploadIcon className="upload-icon" />
+              <p className="upload-text-primary">Drag & drop your dataset here or click to browse</p>
+              <span className="upload-text-secondary">Supported format: CSV up to 25MB</span>
+            </div>
+          </div>
+        ) : (
+          <div className="demo-container">
+            <button 
+              className="analyze-button"
+              onClick={handleQuickDemo}
+              disabled={loading}
+            >
+              {loading ? 'Analyzing...' : 'Analyze Demo Dataset'}
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="error-message">

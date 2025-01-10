@@ -5,7 +5,8 @@ console.log('API_URL:', API_URL);
 
 export const endpoints = {
   healthcheck: `${API_URL}/api/healthcheck`,
-  analyze: `${API_URL}/api/analyze`
+  analyze: `${API_URL}/api/analyze`,
+  demo: `${API_URL}/api/demo`
 };
 
 // Debug log for endpoints

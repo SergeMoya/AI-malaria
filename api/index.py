@@ -30,7 +30,13 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Ensure tmp directory exists
 tmp_dir = os.path.join(os.path.dirname(__file__), 'tmp')
@@ -61,7 +67,8 @@ def root():
         "version": "1.0.0",
         "endpoints": {
             "healthcheck": "/api/healthcheck",
-            "analyze": "/api/analyze"
+            "analyze": "/api/analyze",
+            "demo": "/api/demo"
         }
     }), 200
 
@@ -144,6 +151,54 @@ def analyze_data():
             'details': str(e),
             'trace': traceback.format_exc()
         }), 500
+
+@app.route('/api/demo', methods=['GET'])
+def demo_analysis():
+    try:
+        app.logger.info("Starting demo analysis")
+        
+        # Path to the demo dataset
+        demo_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'DatasetAfricaMalaria.csv')
+        
+        if not os.path.exists(demo_file):
+            app.logger.error(f"Demo file not found at: {demo_file}")
+            return jsonify({'error': 'Demo file not found'}), 404
+
+        app.logger.info(f"Using demo file from: {demo_file}")
+
+        try:
+            # Process the data using existing functions
+            app.logger.info("Loading and cleaning demo data")
+            df = load_and_clean_data(demo_file)
+            
+            # Create visualizations with unique filenames
+            timestamp = int(time.time())
+            heatmap_filename = f'prevention_heatmap_{timestamp}.png'
+            prediction_filename = f'prediction_accuracy_{timestamp}.png'
+            
+            heatmap_path = os.path.join(tmp_dir, heatmap_filename)
+            prediction_path = os.path.join(tmp_dir, prediction_filename)
+            
+            app.logger.info("Creating prevention heatmap")
+            create_prevention_heatmap(df, heatmap_path)
+            
+            app.logger.info("Training model and creating prediction plot")
+            train_model_and_create_prediction_plot(df, prediction_path)
+            
+            # Return the results
+            return jsonify({
+                'message': 'Demo analysis completed successfully',
+                'heatmap': f'/api/image/{heatmap_filename}',
+                'prediction': f'/api/image/{prediction_filename}'
+            }), 200
+            
+        except Exception as e:
+            app.logger.error(f"Error processing demo data: {str(e)}")
+            return jsonify({'error': f'Error processing demo data: {str(e)}'}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Demo analysis error: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/image/<filename>')
 def serve_image(filename):

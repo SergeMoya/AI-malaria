@@ -320,6 +320,106 @@ h1 {
   transform: scale(1.02);
 }
 
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  gap: 16px;
+  margin: 20px auto;
+  max-width: 400px;
+}
+
+.toggle-button {
+  flex: 1;
+  padding: 12px 20px;
+  border: 2px solid #2196f3;
+  background: transparent;
+  color: #2196f3;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.toggle-button.active {
+  background: #2196f3;
+  color: white;
+}
+
+.toggle-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+/* Demo Container */
+.demo-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.analyze-button {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.analyze-button:not(:disabled) {
+  animation: pulse 2s infinite;
+}
+
+.analyze-button:hover:not(:disabled) {
+  transform: scale(1.02);
+  background: linear-gradient(90deg, var(--primary-blue), var(--secondary-cyan));
+}
+
+.analyze-button:disabled {
+  opacity: 0.8;
+  cursor: wait;
+  animation: none;
+  background: linear-gradient(90deg, var(--primary-blue), var(--secondary-cyan));
+  background-size: 200% 100%;
+  animation: loading-gradient 2s linear infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 102, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 102, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 102, 255, 0);
+  }
+}
+
+@keyframes loading-gradient {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Quick Demo Button */
+.quick-demo-button {
+  display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .content-wrapper {
