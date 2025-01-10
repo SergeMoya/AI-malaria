@@ -9,6 +9,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from pathlib import Path
 import joblib
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -54,22 +64,33 @@ def healthcheck():
 @app.route('/api/analyze', methods=['POST'])
 def analyze_data():
     try:
+        # Add detailed logging
+        app.logger.info("Starting analysis request")
+        
         if 'file' not in request.files:
+            app.logger.error("No file in request")
             return jsonify({'error': 'No file uploaded'}), 400
         
         file = request.files['file']
         if file.filename == '':
+            app.logger.error("Empty filename")
             return jsonify({'error': 'No file selected'}), 400
+
+        # Create tmp directory if it doesn't exist
+        os.makedirs(tmp_dir, exist_ok=True)
+        app.logger.info(f"Temporary directory confirmed at: {tmp_dir}")
 
         # Save the file temporarily
         temp_path = os.path.join(tmp_dir, 'temp_data.csv')
         file.save(temp_path)
+        app.logger.info(f"File saved temporarily at: {temp_path}")
 
         # Import analysis functions only when needed
         from .malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
 
         try:
             # Process the data
+            app.logger.info("Loading and cleaning data")
             df = load_and_clean_data(temp_path)
             
             # Create visualizations with unique filenames
@@ -82,9 +103,12 @@ def analyze_data():
             heatmap_path = os.path.join(tmp_dir, heatmap_filename)
             prediction_path = os.path.join(tmp_dir, prediction_filename)
             
+            app.logger.info("Creating heatmap")
             create_prevention_heatmap(df, heatmap_path)
+            app.logger.info("Creating prediction plot")
             train_model_and_create_prediction_plot(df, prediction_path)
             
+            app.logger.info("Analysis completed successfully")
             return jsonify({
                 'message': 'Analysis completed successfully',
                 'heatmap': f'/api/image/{heatmap_filename}',
@@ -92,25 +116,30 @@ def analyze_data():
             }), 200
 
         except Exception as e:
-            print(f"Error in data processing: {str(e)}")
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
+            app.logger.error(f"Error in data processing: {str(e)}")
+            app.logger.error(traceback.format_exc())
+            return jsonify({
+                'error': 'Error processing data',
+                'details': str(e),
+                'trace': traceback.format_exc()
+            }), 500
         finally:
             # Clean up old files
             try:
                 for f in os.listdir(tmp_dir):
-                    if f.endswith('.png') and f not in [heatmap_filename, prediction_filename]:
-                        try:
-                            os.remove(os.path.join(tmp_dir, f))
-                        except:
-                            pass
-            except:
-                pass
+                    if f.endswith('.csv') or (f.endswith('.png') and f != heatmap_filename and f != prediction_filename):
+                        os.remove(os.path.join(tmp_dir, f))
+            except Exception as cleanup_error:
+                app.logger.error(f"Error during cleanup: {str(cleanup_error)}")
 
     except Exception as e:
-        print(f"Error in analyze_data: {str(e)}")
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Unexpected error: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({
+            'error': 'Unexpected error occurred',
+            'details': str(e),
+            'trace': traceback.format_exc()
+        }), 500
 
 @app.route('/api/image/<filename>')
 def serve_image(filename):

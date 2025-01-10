@@ -24,7 +24,12 @@ except locale.Error:
     try:
         locale.setlocale(locale.LC_ALL, 'fr_FR')
     except locale.Error:
-        pass  # Fall back to default locale
+        try:
+            # Try C.UTF-8 which is commonly available on Linux systems
+            locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+        except locale.Error:
+            # If all fails, use default locale
+            locale.setlocale(locale.LC_ALL, '')
 
 def load_and_clean_data(file_path):
     """
