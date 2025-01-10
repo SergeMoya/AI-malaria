@@ -15,6 +15,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Neural network background animation
   useEffect(() => {
@@ -72,6 +73,16 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let progressInterval;
+    if (loading && uploadProgress < 100) {
+      progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 1, 100));
+      }, 100); // Adjust speed by changing interval
+    }
+    return () => clearInterval(progressInterval);
+  }, [loading, uploadProgress]);
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -119,6 +130,7 @@ function App() {
     formData.append('file', fileToAnalyze);
     setLoading(true);
     setError(null);
+    setUploadProgress(0);
 
     try {
       // First check if the API is healthy
@@ -205,13 +217,17 @@ function App() {
         )}
 
         {loading && (
-          <>
-            <div className="loading-indicator">
-              <CircularProgress size={24} style={{ color: '#4f46e5' }} />
-              <span>AI Model Processing...</span>
+          <div className="circular-progress-container">
+            <CircularProgress
+              variant="determinate"
+              value={uploadProgress}
+              size={60}
+              thickness={4}
+            />
+            <div className="circular-progress-overlay">
+              {Math.round(uploadProgress)}%
             </div>
-            <div className="ai-processing"></div>
-          </>
+          </div>
         )}
 
         {results && (
