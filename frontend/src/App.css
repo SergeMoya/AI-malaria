@@ -278,6 +278,48 @@ h1 {
   color: #666;
 }
 
+/* Analysis Sections */
+.analysis-section {
+  margin: 2rem auto;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.analysis-section h3 {
+  color: var(--secondary-cyan);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.image-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.analysis-image {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.analysis-image:hover {
+  transform: scale(1.02);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .content-wrapper {
@@ -298,6 +340,19 @@ h1 {
 
   .visualization {
     padding: 1rem;
+  }
+
+  .analysis-section {
+    padding: 1rem;
+    margin: 1rem;
+  }
+
+  .image-container {
+    padding: 0.5rem;
+  }
+
+  .analysis-image {
+    max-height: 400px;
   }
 }
 

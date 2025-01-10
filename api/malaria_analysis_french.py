@@ -79,39 +79,42 @@ def create_prevention_heatmap(df, output_path):
         numeric_columns = ['bed_nets', 'antimalarial_medication', 'malaria_incidence']
         correlation_matrix = df[numeric_columns].corr()
 
-        # Create figure with specified size
-        plt.figure(figsize=(12, 10))
+        # Create heatmap
+        plt.figure(figsize=(10, 8))
+        plt.style.use('default')
         
-        # Create heatmap using seaborn for better styling
-        sns.heatmap(correlation_matrix, 
-                   annot=True,  # Show correlation values
-                   fmt='.2f',   # Format to 2 decimal places
-                   cmap='RdYlBu_r',  # Red-Yellow-Blue colormap
-                   square=True,  # Make cells square
-                   cbar_kws={'label': 'Coefficient de corrélation'})
+        # Create heatmap using matplotlib
+        im = plt.imshow(correlation_matrix, cmap='RdYlBu_r')
         
-        # French translations for labels
+        # Add colorbar
+        plt.colorbar(im, label='Coefficient de corrélation')
+        
+        # Add labels with French translations
         french_labels = {
             'bed_nets': 'Moustiquaires',
             'antimalarial_medication': 'Médicaments',
             'malaria_incidence': 'Cas de Paludisme'
         }
         
-        # Update labels
-        plt.xticks(np.arange(len(french_labels)) + 0.5, [french_labels[col] for col in numeric_columns], rotation=0)
-        plt.yticks(np.arange(len(french_labels)) + 0.5, [french_labels[col] for col in numeric_columns], rotation=0)
+        labels = [french_labels[col] for col in numeric_columns]
+        plt.xticks(range(len(labels)), labels, rotation=45, ha='right')
+        plt.yticks(range(len(labels)), labels)
         
         # Add title
-        plt.title('Carte de Chaleur de la Corrélation\nentre les Mesures de Prévention', 
-                 pad=20, fontsize=14, fontweight='bold')
+        plt.title('Carte de Chaleur de la Corrélation\nentre les Mesures de Prévention')
+        
+        # Add correlation values
+        for i in range(len(correlation_matrix)):
+            for j in range(len(correlation_matrix)):
+                plt.text(j, i, f'{correlation_matrix.iloc[i, j]:.2f}',
+                        ha='center', va='center', color='black')
         
         # Adjust layout
         plt.tight_layout()
         
-        # Save figure
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        # Save plot
+        plt.savefig(output_path, bbox_inches='tight', dpi=300)
         plt.close()
-        
     except Exception as e:
         raise Exception(f"Erreur lors de la création de la carte de chaleur: {str(e)}")
 
@@ -125,51 +128,52 @@ def train_model_and_create_prediction_plot(df, output_path):
     """
     try:
         # Prepare features and target
-        X = df[['bed_nets', 'antimalarial_medication']]
-        y = df['malaria_incidence']
-        
+        X = df[['bed_nets', 'antimalarial_medication']]  # Features
+        y = df['malaria_incidence']  # Target
+
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
+
         # Train model
         model = RandomForestRegressor(n_estimators=100, random_state=42)
         model.fit(X_train, y_train)
-        
+
         # Make predictions
         y_pred = model.predict(X_test)
-        
+
         # Calculate metrics
         r2 = r2_score(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        
-        # Create figure
+
+        # Create prediction accuracy plot
         plt.figure(figsize=(12, 8))
+        plt.style.use('default')
         
-        # Create scatter plot
-        plt.scatter(y_test, y_pred, alpha=0.5, color='#3498db', label='Prédictions')
+        # Plot actual vs predicted values
+        plt.scatter(y_test, y_pred, alpha=0.5, label='Prédictions')
         
         # Add perfect prediction line
-        max_val = max(max(y_test), max(y_pred))
-        min_val = min(min(y_test), min(y_pred))
-        plt.plot([min_val, max_val], [min_val, max_val], '--', color='#e74c3c', 
-                label='Prédiction Parfaite', linewidth=2)
+        min_val = min(y_test.min(), y_pred.min())
+        max_val = max(y_test.max(), y_pred.max())
+        plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Prédiction Parfaite')
         
-        # Customize plot
-        plt.grid(True, linestyle='--', alpha=0.7)
-        plt.xlabel('Cas de Paludisme (Réels)', fontsize=12)
-        plt.ylabel('Cas de Paludisme (Prédits)', fontsize=12)
-        plt.title(f'Précision des Prédictions\nR² = {r2:.3f}, RMSE = {rmse:.3f}', 
-                 pad=20, fontsize=14, fontweight='bold')
+        # Add labels and title
+        plt.xlabel('Cas de Paludisme (Réels)')
+        plt.ylabel('Cas de Paludisme (Prédits)')
+        plt.title(f'Précision des Prédictions\nR² = {r2:.3f}, RMSE = {rmse:.3f}')
         
         # Add legend
-        plt.legend(fontsize=10)
+        plt.legend()
+        
+        # Add grid
+        plt.grid(True, alpha=0.3)
         
         # Adjust layout
         plt.tight_layout()
         
-        # Save figure with high resolution
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        # Save plot
+        plt.savefig(output_path, bbox_inches='tight', dpi=300)
         plt.close()
-        
+
     except Exception as e:
         raise Exception(f"Erreur lors de la création du graphique de prédiction: {str(e)}")

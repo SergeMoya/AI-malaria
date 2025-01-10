@@ -3,7 +3,7 @@ import axios from 'axios';
 import './App.css';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { CircularProgress } from '@mui/material';
-import { endpoints } from './config';
+import { endpoints, API_URL } from './config';
 import Footer from './components/Footer';
 
 const API_TIMEOUT = 30000;
@@ -205,22 +205,40 @@ function App() {
               </div>
             </div>
 
-            <div className="visualization">
-              <h3 className="visualization-title">Neural Network Prevention Analysis</h3>
-              <img 
-                src={`data:image/png;base64,${results.heatmap}`}
-                alt="AI Prevention Heatmap"
-                className="visualization-image"
-              />
+            <div className="analysis-section">
+              <h3>Neural Network Prevention Analysis</h3>
+              {results?.heatmap && (
+                <div className="image-container">
+                  <img 
+                    key={results.heatmap}
+                    src={`${API_URL}${results.heatmap}?t=${new Date().getTime()}`}
+                    alt="Prevention Heatmap" 
+                    className="analysis-image"
+                    onError={(e) => {
+                      console.error('Failed to load heatmap:', `${API_URL}${results.heatmap}`);
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="visualization">
-              <h3 className="visualization-title">ML Model Prediction Accuracy</h3>
-              <img 
-                src={`data:image/png;base64,${results.prediction_accuracy}`}
-                alt="AI Prediction Accuracy"
-                className="visualization-image"
-              />
+            <div className="analysis-section">
+              <h3>ML Model Prediction Accuracy</h3>
+              {results?.prediction && (
+                <div className="image-container">
+                  <img 
+                    key={results.prediction}
+                    src={`${API_URL}${results.prediction}?t=${new Date().getTime()}`}
+                    alt="Prediction Accuracy" 
+                    className="analysis-image"
+                    onError={(e) => {
+                      console.error('Failed to load prediction:', `${API_URL}${results.prediction}`);
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

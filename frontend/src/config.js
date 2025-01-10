@@ -5,10 +5,11 @@ console.log('API_URL:', API_URL);
 
 export const endpoints = {
   healthcheck: `${API_URL}/api/healthcheck`,
-  analyze: `${API_URL}/api/analyze`,
+  analyze: `${API_URL}/api/analyze`
 };
 
 // Debug log for endpoints
 console.log('Configured endpoints:', endpoints);
 
+export { API_URL };
 export default endpoints;
