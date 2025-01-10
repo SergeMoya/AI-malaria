@@ -1,0 +1,26 @@
+.footer {
+    width: 100%;
+    padding: 1.5rem 0;
+    background: var(--primary-dark);
+    border-top: 1px solid rgba(0, 255, 255, 0.1);
+    box-shadow: 0 -4px 20px rgba(0, 102, 255, 0.2);
+    backdrop-filter: blur(10px);
+    color: var(--secondary-cyan);
+    margin-top: 3rem;
+    position: relative;
+    z-index: 10;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.footer p {
+    margin: 0;
+    opacity: 0.8;
+    color: var(--secondary-cyan);
+    text-shadow: 0 0 10px var(--accent-glow-cyan);
+}

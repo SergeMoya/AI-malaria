@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
-import { motion } from 'framer-motion';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { CircularProgress } from '@mui/material';
 import { endpoints } from './config';
+import Footer from './components/Footer';
 
-// API configuration
-const API_TIMEOUT = 30000; // 30 seconds
+const API_TIMEOUT = 30000;
 
 function App() {
   const [file, setFile] = useState(null);
@@ -17,68 +16,43 @@ function App() {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Neural network background animation
+  // Background animations setup
   useEffect(() => {
-    const createNeuralBackground = () => {
-      const bg = document.querySelector('.neural-bg');
-      if (!bg) return;
+    const createBackground = (className, count) => {
+      const container = document.querySelector(`.${className}`);
+      if (!container) return;
 
-      // Clear existing nodes
-      bg.innerHTML = '';
-
-      // Create nodes
-      for (let i = 0; i < 50; i++) {
-        const node = document.createElement('div');
-        node.className = 'neural-node';
-        node.style.left = `${Math.random() * 100}%`;
-        node.style.top = `${Math.random() * 100}%`;
-        node.style.animationDelay = `${Math.random() * 2}s`;
-        bg.appendChild(node);
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const element = document.createElement('div');
+        element.className = `${className}-element`;
+        element.style.left = `${Math.random() * 100}%`;
+        element.style.top = `${Math.random() * 100}%`;
+        element.style.animationDelay = `${Math.random() * 2}s`;
+        container.appendChild(element);
       }
     };
 
-    createNeuralBackground();
-    window.addEventListener('resize', createNeuralBackground);
+    createBackground('neural-bg', 50);
+    createBackground('ai-particles', 100);
+
+    window.addEventListener('resize', () => {
+      createBackground('neural-bg', 50);
+      createBackground('ai-particles', 100);
+    });
 
     return () => {
-      window.removeEventListener('resize', createNeuralBackground);
+      window.removeEventListener('resize', createBackground);
     };
   }, []);
 
-  // AI particles animation
-  useEffect(() => {
-    const createAIParticles = () => {
-      const particles = document.querySelector('.ai-particles');
-      if (!particles) return;
-
-      // Clear existing particles
-      particles.innerHTML = '';
-
-      // Create particles
-      for (let i = 0; i < 100; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'ai-particle';
-        particle.style.left = `${Math.random() * 100}%`;
-        particle.style.top = `${Math.random() * 100}%`;
-        particle.style.animationDelay = `${Math.random() * 2}s`;
-        particles.appendChild(particle);
-      }
-    };
-
-    createAIParticles();
-    window.addEventListener('resize', createAIParticles);
-
-    return () => {
-      window.removeEventListener('resize', createAIParticles);
-    };
-  }, []);
-
+  // Upload progress simulation
   useEffect(() => {
     let progressInterval;
     if (loading && uploadProgress < 100) {
       progressInterval = setInterval(() => {
         setUploadProgress(prev => Math.min(prev + 1, 100));
-      }, 100); // Adjust speed by changing interval
+      }, 100);
     }
     return () => clearInterval(progressInterval);
   }, [loading, uploadProgress]);
@@ -86,24 +60,20 @@ function App() {
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       handleFileSelection(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (event) => {
-    if (event.target.files && event.target.files[0]) {
+    if (event.target.files?.[0]) {
       handleFileSelection(event.target.files[0]);
     }
   };
@@ -115,7 +85,6 @@ function App() {
     }
     setFile(selectedFile);
     setError(null);
-    // Automatically start analysis when file is selected
     handleSubmit(selectedFile);
   };
 
@@ -133,17 +102,13 @@ function App() {
     setUploadProgress(0);
 
     try {
-      // First check if the API is healthy
       const healthCheck = await axios.get(endpoints.healthcheck, { timeout: 5000 });
       if (healthCheck.data.status !== 'healthy') {
         throw new Error('Le service est temporairement indisponible');
       }
 
-      // Then send the file for analysis
       const response = await axios.post(endpoints.analyze, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: API_TIMEOUT,
       });
 
@@ -154,11 +119,7 @@ function App() {
       }
     } catch (err) {
       console.error('Analysis error:', err);
-      setError(
-        err.response?.data?.error || 
-        err.message || 
-        'Erreur pendant l\'analyse. Veuillez réessayer.'
-      );
+      setError(err.response?.data?.error || err.message || 'Erreur pendant l\'analyse. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
@@ -166,9 +127,7 @@ function App() {
 
   return (
     <div className="App">
-      <div className="ai-particles">
-        {/* AI particles will be added by useEffect */}
-      </div>
+      <div className="ai-particles" />
       
       <div className="content-wrapper">
         <header className="App-header">
@@ -178,7 +137,7 @@ function App() {
               <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Powered by Advanced AI
+            Machine Learning Algorithms - Random Forest Architecture
           </div>
           <h1>AI-Powered Malaria Analysis</h1>
           <p className="subtitle">
@@ -191,8 +150,7 @@ function App() {
              onDragLeave={handleDrag}
              onDragOver={handleDrag}
              onDrop={handleDrop}
-             onClick={() => document.getElementById('file-input').click()}
-        >
+             onClick={() => document.getElementById('file-input').click()}>
           <input
             id="file-input"
             type="file"
@@ -203,15 +161,13 @@ function App() {
           <div className="upload-content">
             <CloudUploadIcon className="upload-icon" />
             <p className="upload-text-primary">Drag & drop your dataset here or click to browse</p>
-            <span className="upload-text-secondary">
-              Supported format: CSV up to 25MB
-            </span>
+            <span className="upload-text-secondary">Supported format: CSV up to 25MB</span>
           </div>
         </div>
 
         {error && (
           <div className="error-message">
-            <span style={{ marginRight: '8px' }}>⚠️</span>
+            <span>⚠️</span>
             {error}
           </div>
         )}
@@ -254,7 +210,7 @@ function App() {
               <img 
                 src={`data:image/png;base64,${results.heatmap}`}
                 alt="AI Prevention Heatmap"
-                style={{ maxWidth: '100%', borderRadius: '8px' }}
+                className="visualization-image"
               />
             </div>
 
@@ -263,12 +219,13 @@ function App() {
               <img 
                 src={`data:image/png;base64,${results.prediction_accuracy}`}
                 alt="AI Prediction Accuracy"
-                style={{ maxWidth: '100%', borderRadius: '8px' }}
+                className="visualization-image"
               />
             </div>
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
