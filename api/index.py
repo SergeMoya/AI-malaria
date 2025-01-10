@@ -10,23 +10,31 @@ from sklearn.ensemble import RandomForestClassifier
 from pathlib import Path
 import joblib
 import logging
+import time
+
+# Add the current directory to Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# Import the analysis module (using absolute import)
+from malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout)
+        logging.StreamHandler()
     ]
 )
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Ensure tmp directory exists in the same directory as the script
+# Ensure tmp directory exists
 tmp_dir = os.path.join(os.path.dirname(__file__), 'tmp')
-if not os.path.exists(tmp_dir):
-    os.makedirs(tmp_dir)
+os.makedirs(tmp_dir, exist_ok=True)
 
 # Global variables for caching
 _model = None
@@ -85,16 +93,12 @@ def analyze_data():
         file.save(temp_path)
         app.logger.info(f"File saved temporarily at: {temp_path}")
 
-        # Import analysis functions only when needed
-        from .malaria_analysis_french import load_and_clean_data, create_prevention_heatmap, train_model_and_create_prediction_plot
-
         try:
             # Process the data
             app.logger.info("Loading and cleaning data")
             df = load_and_clean_data(temp_path)
             
             # Create visualizations with unique filenames
-            import time
             timestamp = int(time.time())
             
             heatmap_filename = f'prevention_heatmap_{timestamp}.png'

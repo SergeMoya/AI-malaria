@@ -8,14 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 import os
-
-# Set matplotlib to use French locale and proper encoding
 import locale
-import sys
-import codecs
-
-# Set up UTF-8 encoding for console output
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
 
 # Try to set French locale, fall back to English if not available
 try:
@@ -25,11 +18,13 @@ except locale.Error:
         locale.setlocale(locale.LC_ALL, 'fr_FR')
     except locale.Error:
         try:
-            # Try C.UTF-8 which is commonly available on Linux systems
             locale.setlocale(locale.LC_ALL, 'C.UTF-8')
         except locale.Error:
-            # If all fails, use default locale
             locale.setlocale(locale.LC_ALL, '')
+
+# Configure matplotlib to use UTF-8
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 def load_and_clean_data(file_path):
     """

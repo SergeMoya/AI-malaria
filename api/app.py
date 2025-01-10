@@ -1,6 +1,14 @@
 from flask import Flask
 from flask_cors import CORS
-from api.index import app as application
+import os
+import sys
+
+# Add the current directory to Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+from index import app as application
 
 app = application
 CORS(app)
